@@ -2,6 +2,10 @@ import { ActionFunctionArgs, json, type MetaFunction } from '@remix-run/node'
 import { Form, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { getStackByName, getStacksList, startStack, stopStack } from '~/lib/stack.server'
+import { PackageIcon } from 'lucide-react'
+import { Table, TableBody, TableCell, TableRow } from '~/components/ui/table'
+import { Button } from '~/components/ui/button'
+import { Input } from '~/components/ui/input'
 
 const StackFormSchema = z.object({
   stack: z.string(),
@@ -44,25 +48,50 @@ export default function IndexRoute() {
   const { stacks } = useLoaderData<typeof loader>()
 
   return (
-    <div className="p-6">
-      <h1>dabba</h1>
-      <ul className="flex flex-col gap-y-2 border border-black p-4">
-        {stacks.map(stack => (
-          <li key={stack.name} className="flex flex-col">
-            <span>{stack.name}</span>
-            <span className="truncate text-sm text-gray-600">{stack.path}</span>
-            <Form className="flex gap-x-2" method="POST">
-              <input type="hidden" name="stack" value={stack.name} />
-              <button name="intent" value="start">
-                start
-              </button>
-              <button name="intent" value="stop">
-                stop
-              </button>
-            </Form>
-          </li>
-        ))}
-      </ul>
+    <div className="bg-secondary min-h-screen">
+      <header className="bg bg-background px-3 py-4 shadow">
+        <h1 className="flex items-center gap-x-1 font-medium">
+          <PackageIcon className="h-[1.2em]" />
+          <span>dabba</span>
+        </h1>
+      </header>
+
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        <h2 className="text-3xl font-bold">Stacks</h2>
+        <Form className="mt-8 flex gap-x-2">
+          <Input placeholder="Search stacks..." />
+          <Button>Search</Button>
+        </Form>
+        <div className="bg-background mt-4 rounded-md border">
+          <Table>
+            <TableBody>
+              {stacks.map(stack => {
+                return (
+                  <TableRow>
+                    <TableCell>
+                      <span className="font-medium">{stack.name}</span>
+                      <span className="block text-sm text-gray-500">{stack.path}</span>
+                    </TableCell>
+                    <TableCell>
+                      <Form method="POST" className="ml-auto max-w-max">
+                        <input type="hidden" name="stack" value={stack.name} />
+                        <div className="flex gap-x-2">
+                          <Button name="intent" value="start" variant="outline" size="sm">
+                            Start
+                          </Button>
+                          <Button name="intent" value="stop" variant="outline" size="sm">
+                            Stop
+                          </Button>
+                        </div>
+                      </Form>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      </main>
     </div>
   )
 }
