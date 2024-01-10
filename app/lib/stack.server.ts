@@ -173,3 +173,12 @@ export async function getStacksList() {
 
   return stacks
 }
+
+export async function getStackByName(name: string) {
+  const stacks = await getStacksList()
+  const stack = stacks.find(stack => stack.name === name)
+  if (!stack) {
+    throw new Error(`Stack ${name} not found`)
+  }
+  return stack
+}
