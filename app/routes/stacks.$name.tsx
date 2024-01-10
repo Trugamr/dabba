@@ -63,7 +63,7 @@ export default function StacksNameRoute() {
               .exhaustive()}
           </span>
         </p>
-        <p className="truncate text-sm text-primary/60">{stack.directory}</p>
+        <p className="truncate text-sm text-foreground/60">{stack.directory}</p>
       </div>
       <Form className="mt-4" method="POST">
         <Input type="hidden" name="stack" value={stack.name} />

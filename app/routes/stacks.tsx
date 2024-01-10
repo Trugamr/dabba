@@ -2,7 +2,6 @@ import { NavLink, Outlet, json, useLoaderData, useMatch } from '@remix-run/react
 import { buttonVariants } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { getStacksList } from '~/lib/stack.server'
-import { cn } from '~/lib/utils'
 import { StatusIndicator } from '~/components/status-indicator'
 
 export async function loader() {
@@ -18,8 +17,8 @@ export default function StacksRoute() {
 
   return (
     <div className="flex min-h-full">
-      <aside className="w-60 shrink-0 border-r-2 bg-background p-4">
-        <Input className="mt-2" placeholder="Search" />
+      <aside className="w-60 shrink-0 border-r bg-background p-4">
+        <Input className="mt-2" placeholder="Search stacks" />
         <ul className="mt-4 space-y-2">
           {stacks.map(stack => {
             return (
@@ -28,13 +27,10 @@ export default function StacksRoute() {
                   key={stack.name}
                   to={stack.name}
                   className={({ isActive }) =>
-                    cn(
-                      buttonVariants({
-                        variant: isActive ? 'default' : 'ghost',
-                        className: 'w-full',
-                      }),
-                      'flex items-center gap-x-2',
-                    )
+                    buttonVariants({
+                      variant: isActive ? 'default' : 'ghost',
+                      className: 'flex w-full items-center gap-x-2',
+                    })
                   }
                 >
                   <StatusIndicator status={stack.status} />
