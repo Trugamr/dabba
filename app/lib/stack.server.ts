@@ -191,6 +191,7 @@ export async function getStackInitialLogs(stack: Pick<StoredStack, 'directory'>)
     })
     return [stdout]
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error("Failed to get stack's initial logs", error)
   }
 }

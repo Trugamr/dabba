@@ -1,5 +1,3 @@
-import { useEffect, useReducer } from 'react'
-import { useEventSource } from '~/lib/hooks/use-event-source'
 import { UseStackLogsOptions, useStackLogs } from '~/lib/hooks/use-stack-logs'
 import { StoredStack } from '~/lib/stack.server'
 import { cn } from '~/lib/utils'
