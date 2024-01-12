@@ -6,19 +6,20 @@ import {
   getStoredStackByName,
   startStack,
   stopStack,
+  destroyStack,
 } from '~/lib/stack.server'
 import { Form, useLoaderData } from '@remix-run/react'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
-import { PlayIcon, SquareIcon } from 'lucide-react'
+import { BombIcon, PlayIcon, SquareIcon } from 'lucide-react'
 import { z } from 'zod'
-import { match } from 'ts-pattern'
+import { P, match } from 'ts-pattern'
 import { StatusIndicator } from '~/components/status-indicator'
 import { StackLogs } from '~/components/stack-logs'
 
 const StackFormSchema = z.object({
   stack: z.string(),
-  intent: z.enum(['start', 'stop']),
+  intent: z.enum(['start', 'stop', 'destroy']),
 })
 
 export async function loader({ params }: ActionFunctionArgs) {
@@ -46,6 +47,9 @@ export async function action({ request }: ActionFunctionArgs) {
     case 'stop':
       await stopStack(stack)
       break
+    case 'destroy':
+      await destroyStack(stack)
+      break
     default:
       throw new Response('Bad request', { status: 400 })
   }
@@ -59,55 +63,75 @@ export default function StacksNameRoute() {
   return (
     <section>
       <div className="space-y-1">
-        <h3 className="flex gap-x-1 text-xl font-medium">
+        <h3 className="flex gap-x-1 text-2xl font-medium">
           <span>{stack.name}</span>
           {stack.status === 'running' ? <span>({stack.services})</span> : null}
         </h3>
-        <p className="space-x-1 text-sm leading-tight">
+        <p className="space-x-1 leading-tight">
           <StatusIndicator status={stack.status} />
           <span>
             {match(stack.status)
               .with('running', () => 'Running')
               .with('stopped', () => 'Stopped')
+              .with('inactive', () => 'Inactive')
               .exhaustive()}
           </span>
         </p>
-        <p className="truncate text-sm text-foreground/60">{stack.directory}</p>
+        <p className="truncate text-sm text-muted-foreground">{stack.directory}</p>
       </div>
       <Form className="mt-4" method="POST">
         <Input type="hidden" name="stack" value={stack.name} />
-        <div>
-          {stack.status === 'stopped' ? (
-            <Button className="gap-x-1.5" name="intent" value="start" size="sm">
-              <PlayIcon className="h-[0.95em] w-[0.95em] fill-current" />
-              <span>Start</span>
-            </Button>
-          ) : (
-            <Button
-              className="gap-x-1.5"
-              name="intent"
-              value="stop"
-              size="sm"
-              variant="destructive"
-            >
-              <SquareIcon className="h-[0.95em] w-[0.95em] fill-current" />
-              <span>Stop</span>
-            </Button>
-          )}
+        <div className="flex gap-x-2.5">
+          {match(stack.status)
+            .with(P.union('inactive', 'stopped'), () => (
+              <Button className="gap-x-1.5" name="intent" value="start" size="sm">
+                <PlayIcon className="h-[0.95em] w-[0.95em] fill-current" />
+                <span>Start</span>
+              </Button>
+            ))
+            .with('running', () => (
+              <Button
+                className="gap-x-1.5"
+                name="intent"
+                value="stop"
+                size="sm"
+                variant="destructive"
+              >
+                <SquareIcon className="h-[0.95em] w-[0.95em] fill-current" />
+                <span>Stop</span>
+              </Button>
+            ))
+            .exhaustive()}
+          {match(stack.status)
+            .with(P.union('running', 'stopped'), () => (
+              <Button
+                className="gap-x-1.5"
+                name="intent"
+                value="destroy"
+                size="sm"
+                variant="destructive"
+              >
+                <BombIcon className="h-[0.95em] w-[0.95em] fill-current" />
+                <span>Destroy</span>
+              </Button>
+            ))
+            .with('inactive', () => null)
+            .exhaustive()}
         </div>
       </Form>
 
-      {match(stack.status)
-        .with('running', () => (
-          <StackLogs
-            key={stack.name}
-            className="mt-4"
-            stack={stack}
-            initialLogs={initialLogs}
-          />
-        ))
-        .with('stopped', () => null)
-        .exhaustive()}
+      <div className="mt-6">
+        <h3 className="text-xl font-medium">Logs</h3>
+        <p className="text-muted-foreground">Output from all services in this stack</p>
+        <StackLogs
+          // Avoid re-mounting the component when the stack status changes
+          // TODO: We should handle status changes in the component itself
+          key={`${stack.name}::${stack.status}`}
+          className="mt-2"
+          stack={stack}
+          initialLogs={initialLogs}
+        />
+      </div>
     </section>
   )
 }

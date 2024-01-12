@@ -11,7 +11,7 @@ export type StoredStack = {
 }
 
 type ActiveStack = Omit<z.infer<typeof ActiveStackSchema>, 'status'> & {
-  status: 'running' | 'stopped'
+  status: 'running' | 'stopped' | 'inactive'
 }
 
 export function getStacksDirectory() {
@@ -90,11 +90,21 @@ export async function startStack(stack: StoredStack) {
 
 export async function stopStack(stack: StoredStack) {
   try {
-    await execa('docker', ['compose', 'down', '--remove-orphans'], {
+    await execa('docker', ['compose', 'stop'], {
       cwd: stack.directory,
     })
   } catch (error) {
     throw new Error(`Failed to stop stack ${stack.name}`)
+  }
+}
+
+export async function destroyStack(stack: StoredStack) {
+  try {
+    await execa('docker', ['compose', 'down', '--remove-orphans'], {
+      cwd: stack.directory,
+    })
+  } catch (error) {
+    throw new Error(`Failed to destroy stack ${stack.name}`)
   }
 }
 
@@ -107,8 +117,10 @@ const ActiveStackSchema = z
     Status: z.preprocess(
       value => (typeof value === 'string' ? STACK_STATUS_REGEX.exec(value)?.groups : value),
       z.object({
-        // TODO: Check correctness of this enum
-        current: z.enum(['running']),
+        current: z
+          .enum(['running', 'exited'])
+          // Map `exited` to `stopped` for simplicity
+          .transform(value => (value === 'exited' ? 'stopped' : value)),
         count: z.coerce.number(),
       }),
     ),
@@ -132,7 +144,7 @@ const ActiveStackListSchema = z.array(ActiveStackSchema)
 export async function getActiveStacksList(): Promise<ActiveStack[]> {
   let stdout: string
   try {
-    const result = await execa('docker', ['compose', 'ls', '--format', 'json'])
+    const result = await execa('docker', ['compose', 'ls', '--all', '--format', 'json'])
     stdout = result.stdout
   } catch (error) {
     throw new Error(`Failed to get active stacks`)
@@ -165,7 +177,7 @@ export async function getStacksList() {
     } else {
       stacks.push({
         ...storedStack,
-        status: 'stopped',
+        status: 'inactive',
         services: 0,
       })
     }
