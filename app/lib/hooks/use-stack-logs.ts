@@ -2,7 +2,7 @@ import { useReducer } from 'react'
 import { StoredStack } from '~/lib/stack.server'
 import { useEventSource } from '~/lib/hooks/use-event-source'
 
-type UseStackLogsOptions = {
+export type UseStackLogsOptions = {
   initialLogs?: string[]
 }
 
@@ -14,7 +14,6 @@ export function useStackLogs(
   { initialLogs = defaultInitialLogs }: UseStackLogsOptions = defaultUseStackLogsOptions,
 ) {
   const [logs, push] = useReducer((logs: string[], log: MessageEvent) => {
-    console.log(log)
     if (typeof log.data === 'string') {
       return [...logs, `${log.data}\n`]
     }

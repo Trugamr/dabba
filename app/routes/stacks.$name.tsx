@@ -1,6 +1,12 @@
 import { ActionFunctionArgs, json } from '@remix-run/node'
 import { invariantResponse } from '@epic-web/invariant'
-import { getStackByName, getStoredStackByName, startStack, stopStack } from '~/lib/stack.server'
+import {
+  getStackInitialLogs,
+  getStackByName,
+  getStoredStackByName,
+  startStack,
+  stopStack,
+} from '~/lib/stack.server'
 import { Form, useLoaderData } from '@remix-run/react'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
@@ -19,9 +25,11 @@ export async function loader({ params }: ActionFunctionArgs) {
   invariantResponse(params.name, 'Stack name is required')
 
   const stack = await getStackByName(params.name)
+  const initialLogs = await getStackInitialLogs(stack)
 
   return json({
     stack,
+    initialLogs,
   })
 }
 
@@ -46,7 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function StacksNameRoute() {
-  const { stack } = useLoaderData<typeof loader>()
+  const { stack, initialLogs } = useLoaderData<typeof loader>()
 
   return (
     <section>
@@ -89,7 +97,17 @@ export default function StacksNameRoute() {
         </div>
       </Form>
 
-      <StackLogs key={stack.name} className="mt-4" stack={stack} />
+      {match(stack.status)
+        .with('running', () => (
+          <StackLogs
+            key={stack.name}
+            className="mt-4"
+            stack={stack}
+            initialLogs={initialLogs}
+          />
+        ))
+        .with('stopped', () => null)
+        .exhaustive()}
     </section>
   )
 }

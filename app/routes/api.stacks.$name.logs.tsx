@@ -1,17 +1,14 @@
 import { invariantResponse } from '@epic-web/invariant'
-import { LoaderFunctionArgs, json } from '@remix-run/node'
-import { execa } from 'execa'
+import { LoaderFunctionArgs } from '@remix-run/node'
 import { eventStream } from 'remix-utils/sse/server'
-import { getStackByName } from '~/lib/stack.server'
+import { getStackByName, getStackLogsProcess } from '~/lib/stack.server'
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariantResponse(params.name, 'Stack name is required')
 
   const stack = await getStackByName(params.name)
 
-  const process = execa('docker', ['compose', 'logs', '--tail', '10', '--follow'], {
-    cwd: stack.directory,
-  })
+  const process = getStackLogsProcess({ directory: stack.directory })
 
   return eventStream(request.signal, function setup(send) {
     process.stdout?.on('data', data => {

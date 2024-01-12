@@ -182,3 +182,21 @@ export async function getStackByName(name: string) {
   }
   return stack
 }
+
+export async function getStackInitialLogs(stack: Pick<StoredStack, 'directory'>) {
+  try {
+    const { stdout } = await execa('docker', ['compose', 'logs', '--tail', '50'], {
+      cwd: stack.directory,
+      stripFinalNewline: false,
+    })
+    return [stdout]
+  } catch (error) {
+    console.error("Failed to get stack's initial logs", error)
+  }
+}
+
+export function getStackLogsProcess(stack: Pick<StoredStack, 'directory'>) {
+  return execa('docker', ['compose', 'logs', '--tail', '0', '--follow'], {
+    cwd: stack.directory,
+  })
+}

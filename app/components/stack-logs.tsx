@@ -1,16 +1,18 @@
 import { useEffect, useReducer } from 'react'
 import { useEventSource } from '~/lib/hooks/use-event-source'
-import { useStackLogs } from '~/lib/hooks/use-stack-logs'
+import { UseStackLogsOptions, useStackLogs } from '~/lib/hooks/use-stack-logs'
 import { StoredStack } from '~/lib/stack.server'
 import { cn } from '~/lib/utils'
 
 type StackLogs = {
   stack: Pick<StoredStack, 'name'>
   className?: string
-}
+} & Pick<UseStackLogsOptions, 'initialLogs'>
 
-export function StackLogs({ stack, className }: StackLogs) {
-  const logs = useStackLogs(stack)
+export function StackLogs({ stack, className, initialLogs }: StackLogs) {
+  const logs = useStackLogs(stack, {
+    initialLogs,
+  })
 
   return (
     <div
