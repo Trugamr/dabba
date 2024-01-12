@@ -8,6 +8,7 @@ import { PlayIcon, SquareIcon } from 'lucide-react'
 import { z } from 'zod'
 import { match } from 'ts-pattern'
 import { StatusIndicator } from '~/components/status-indicator'
+import { StackLogs } from '~/components/stack-logs'
 
 const StackFormSchema = z.object({
   stack: z.string(),
@@ -87,6 +88,8 @@ export default function StacksNameRoute() {
           )}
         </div>
       </Form>
+
+      <StackLogs key={stack.name} className="mt-4" stack={stack} />
     </section>
   )
 }

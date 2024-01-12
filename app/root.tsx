@@ -12,6 +12,11 @@ import { PackageIcon, RocketIcon } from 'lucide-react'
 import React from 'react'
 import '~/globals.css'
 import { buttonVariants } from './components/ui/button'
+import { MetaFunction } from '@remix-run/node'
+
+export const meta: MetaFunction = () => {
+  return [{ title: 'dabba' }]
+}
 
 type DocumentProps = {
   children?: React.ReactNode

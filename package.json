@@ -24,6 +24,7 @@
     "lucide-react": "^0.308.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "remix-utils": "^7.5.0",
     "tailwind-merge": "^2.2.0",
     "tailwindcss-animate": "^1.0.7",
     "ts-pattern": "^5.0.6",

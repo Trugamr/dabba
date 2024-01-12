@@ -4,7 +4,7 @@ import { env } from './env.server'
 import { execa } from 'execa'
 import { z } from 'zod'
 
-type StoredStack = {
+export type StoredStack = {
   name: string
   directory: string
   path: string
