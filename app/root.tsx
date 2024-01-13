@@ -10,9 +10,12 @@ import {
 } from '@remix-run/react'
 import { PackageIcon, RocketIcon } from 'lucide-react'
 import React from 'react'
-import '~/globals.css'
 import { buttonVariants } from './components/ui/button'
 import { MetaFunction } from '@remix-run/node'
+import { GlobalNavigationProgress } from './components/global-navigation-progress'
+
+import 'nprogress/nprogress.css'
+import '~/globals.css'
 
 export const meta: MetaFunction = () => {
   return [{ title: 'dabba' }]
@@ -55,6 +58,7 @@ const links = [
 export default function App() {
   return (
     <Document>
+      <GlobalNavigationProgress />
       <div className="flex min-h-screen flex-col bg-secondary">
         <header className="flex gap-x-8 border-b bg-background p-4">
           <Link to="/" className="flex items-center gap-x-1.5 text-xl font-medium">

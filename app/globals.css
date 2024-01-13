@@ -76,3 +76,13 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Change NProgress color, height */
+#nprogress .bar {
+  @apply h-1 bg-primary;
+}
+
+/* Disable NProgress blur effect */
+#nprogress .peg {
+  @apply hidden;
+}
