@@ -9,10 +9,12 @@ type ManagedStack = {
   name: string
   directory: string
   path: string
+  managed: true
 }
 
-type Stack = Omit<z.infer<typeof StackDetailsSchema>, 'status'> & {
+export type Stack = Omit<z.infer<typeof StackDetailsSchema>, 'status'> & {
   status: 'running' | 'stopped' | 'inactive'
+  managed: boolean
 }
 
 export function getManagedStacksDirectory() {
@@ -46,6 +48,7 @@ export async function getManagedStacks() {
             name: stackName,
             directory: stackDirectory,
             path: configPath,
+            managed: true,
           })
         }
       } catch (error) {
@@ -118,12 +121,12 @@ const StackDetailsSchema = z
     }
   })
 
-const StacksDetails = z.array(StackDetailsSchema)
+const StacksDetailsSchema = z.array(StackDetailsSchema)
 
 /**
  * Get details about stacks that are currently active (i.e. running or stopped)
  */
-export async function getStacksDetails(): Promise<Stack[]> {
+export async function getStacksDetails() {
   let stdout: string
   try {
     const result = await execa('docker', ['compose', 'ls', '--all', '--format', 'json'])
@@ -139,7 +142,7 @@ export async function getStacksDetails(): Promise<Stack[]> {
     throw new Error('Failed to parse stacks details JSON')
   }
 
-  return StacksDetails.parse(json)
+  return StacksDetailsSchema.parse(json)
 }
 
 /**
@@ -186,6 +189,7 @@ export async function getStacks() {
     if (!stackWithSameNameExists) {
       stacks.push({
         ...stackDetails,
+        managed: false,
       })
     }
   }

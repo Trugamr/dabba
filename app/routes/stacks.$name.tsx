@@ -1,4 +1,4 @@
-import { ActionFunctionArgs, json } from '@remix-run/node'
+import { ActionFunctionArgs, json, redirect } from '@remix-run/node'
 import { invariantResponse } from '@epic-web/invariant'
 import {
   getStackInitialLogs,
@@ -10,12 +10,13 @@ import {
 import { Form, useLoaderData } from '@remix-run/react'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
-import { BombIcon, PlayIcon, SquareIcon } from 'lucide-react'
+import { BombIcon, PlayIcon, SquareIcon, UnplugIcon } from 'lucide-react'
 import { z } from 'zod'
 import { P, match } from 'ts-pattern'
 import { StatusIndicator } from '~/components/status-indicator'
 import { StackLogs } from '~/components/stack-logs'
-import { notFound } from '~/lib/utils'
+import { badRequest, notFound } from '~/lib/utils'
+import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 
 const StackFormSchema = z.object({
   stack: z.string(),
@@ -57,9 +58,15 @@ export async function action({ request }: ActionFunctionArgs) {
       break
     case 'destroy':
       await destroyStack(stack)
+
+      // Redirect if destroying unmanaged stack
+      if (!stack.managed) {
+        throw redirect('/stacks')
+      }
+
       break
     default:
-      throw new Response('Bad request', { status: 400 })
+      throw badRequest(`Invalid intent "${values.intent}"`)
   }
 
   return json(null)
@@ -87,6 +94,15 @@ export default function StacksNameRoute() {
         </p>
         <p className="truncate text-sm text-muted-foreground">{stack.directory}</p>
       </div>
+      {!stack.managed ? (
+        <Alert className="mt-4 max-w-max text-sm">
+          <UnplugIcon className="h-4 w-4" />
+          <AlertTitle>Unmanaged</AlertTitle>
+          <AlertDescription>
+            Stack is not being managed by dabba, some features may be unavailable
+          </AlertDescription>
+        </Alert>
+      ) : null}
       <Form className="mt-4" method="POST">
         <Input type="hidden" name="stack" value={stack.name} />
         <div className="flex gap-x-2.5">

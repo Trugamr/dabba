@@ -14,3 +14,13 @@ export function notFound(message: string) {
     statusText: 'Not Found',
   })
 }
+
+/**
+ * Create a `Response` with a 400 status code
+ */
+export function badRequest(message: string) {
+  return new Response(message, {
+    status: 400,
+    statusText: 'Bad Request',
+  })
+}
