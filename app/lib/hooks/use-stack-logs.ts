@@ -1,5 +1,5 @@
 import { useReducer } from 'react'
-import { StoredStack } from '~/lib/stack.server'
+import type { Stack } from '~/lib/stack.server'
 import { useEventSource } from '~/lib/hooks/use-event-source'
 
 export type UseStackLogsOptions = {
@@ -10,7 +10,7 @@ const defaultUseStackLogsOptions: UseStackLogsOptions = {}
 const defaultInitialLogs: string[] = []
 
 export function useStackLogs(
-  stack: Pick<StoredStack, 'name'>,
+  stack: Pick<Stack, 'name'>,
   { initialLogs = defaultInitialLogs }: UseStackLogsOptions = defaultUseStackLogsOptions,
 ) {
   const [logs, push] = useReducer((logs: string[], log: MessageEvent) => {

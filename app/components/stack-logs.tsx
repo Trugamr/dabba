@@ -1,9 +1,9 @@
 import { UseStackLogsOptions, useStackLogs } from '~/lib/hooks/use-stack-logs'
-import { StoredStack } from '~/lib/stack.server'
+import type { Stack } from '~/lib/stack.server'
 import { cn } from '~/lib/utils'
 
 type StackLogs = {
-  stack: Pick<StoredStack, 'name'>
+  stack: Pick<Stack, 'name'>
   className?: string
 } & Pick<UseStackLogsOptions, 'initialLogs'>
 
