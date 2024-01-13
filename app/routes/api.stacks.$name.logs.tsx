@@ -15,16 +15,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const process = getStackLogsProcess({ directory: stack.directory })
 
   return eventStream(request.signal, function setup(send) {
-    process.stdout?.on('data', data => {
+    function handler(data: unknown) {
       if (data instanceof Buffer) {
         send({
           data: data.toString('utf-8'),
         })
       }
-    })
+    }
+
+    process.stdout?.addListener('data', handler)
 
     return function cleanup() {
+      // Kill the process when the client disconnects
       process.kill()
+      // Remove the listener
+      process.stdout?.removeListener('data', handler)
     }
   })
 }
