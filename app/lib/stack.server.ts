@@ -12,8 +12,10 @@ type ManagedStack = {
   managed: true
 }
 
-export type Stack = Omit<z.infer<typeof StackDetailsSchema>, 'status'> & {
-  status: 'running' | 'stopped' | 'inactive'
+type StackDetails = z.infer<typeof StackDetailsSchema>
+
+export type Stack = Omit<StackDetails, 'status'> & {
+  status: StackDetails['status'] | 'inactive'
   managed: boolean
 }
 
@@ -103,7 +105,7 @@ const StackDetailsSchema = z
       value => (typeof value === 'string' ? STACK_STATUS_REGEX.exec(value)?.groups : value),
       z.object({
         current: z
-          .enum(['running', 'exited'])
+          .enum(['created', 'running', 'exited'])
           // Map `exited` to `stopped` for simplicity
           .transform(value => (value === 'exited' ? 'stopped' : value)),
         count: z.coerce.number(),

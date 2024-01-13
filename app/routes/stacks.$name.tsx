@@ -86,6 +86,7 @@ export default function StacksNameRoute() {
           <StatusIndicator status={stack.status} />
           <span>
             {match(stack.status)
+              .with('created', () => 'Created')
               .with('running', () => 'Running')
               .with('stopped', () => 'Stopped')
               .with('inactive', () => 'Inactive')
@@ -113,7 +114,7 @@ export default function StacksNameRoute() {
                 <span>Start</span>
               </Button>
             ))
-            .with('running', () => (
+            .with(P.union('created', 'running'), () => (
               <Button
                 className="gap-x-1.5"
                 name="intent"
@@ -127,7 +128,7 @@ export default function StacksNameRoute() {
             ))
             .exhaustive()}
           {match(stack.status)
-            .with(P.union('running', 'stopped'), () => (
+            .with(P.union('created', 'running', 'stopped'), () => (
               <Button
                 className="gap-x-1.5"
                 name="intent"
