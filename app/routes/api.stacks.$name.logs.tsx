@@ -20,7 +20,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     })
 
     return function cleanup() {
-      process.disconnect()
+      process.kill()
     }
   })
 }
