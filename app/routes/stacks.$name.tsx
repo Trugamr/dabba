@@ -3,7 +3,6 @@ import { invariantResponse } from '@epic-web/invariant'
 import {
   getStackInitialLogs,
   getStackByName,
-  getStoredStackByName,
   startStack,
   stopStack,
   destroyStack,
@@ -16,6 +15,7 @@ import { z } from 'zod'
 import { P, match } from 'ts-pattern'
 import { StatusIndicator } from '~/components/status-indicator'
 import { StackLogs } from '~/components/stack-logs'
+import { notFound } from '~/lib/utils'
 
 const StackFormSchema = z.object({
   stack: z.string(),
@@ -26,6 +26,10 @@ export async function loader({ params }: ActionFunctionArgs) {
   invariantResponse(params.name, 'Stack name is required')
 
   const stack = await getStackByName(params.name)
+  if (!stack) {
+    throw notFound(`Stack "${params.name}" not found`)
+  }
+
   const initialLogs = await getStackInitialLogs(stack)
 
   return json({
@@ -38,7 +42,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData()
   const values = StackFormSchema.parse(Object.fromEntries(formData))
 
-  const stack = await getStoredStackByName(values.stack)
+  // TODO: We could just send the stack path so we can perform operations without lookup
+  const stack = await getStackByName(values.stack)
+  if (!stack) {
+    throw notFound(`Stack "${values.stack}" not found`)
+  }
 
   switch (values.intent) {
     case 'start':

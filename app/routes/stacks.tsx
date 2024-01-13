@@ -1,11 +1,11 @@
 import { NavLink, Outlet, json, useLoaderData } from '@remix-run/react'
 import { buttonVariants } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
-import { getStacksList } from '~/lib/stack.server'
+import { getStacks } from '~/lib/stack.server'
 import { StatusIndicator } from '~/components/status-indicator'
 
 export async function loader() {
-  const stacks = await getStacksList()
+  const stacks = await getStacks()
 
   return json({
     stacks,
