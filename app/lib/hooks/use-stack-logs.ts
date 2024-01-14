@@ -22,10 +22,22 @@ export function useStackLogs(
   useEffect(() => {
     // Open a new stream of logs
     const source = new EventSource(`/api/stacks/${stack.name}/logs`)
-    source.addEventListener('message', push)
+
+    const handlers = {
+      message: push,
+      error() {
+        source.close()
+      },
+    } as const
+
+    source.addEventListener('message', handlers.message)
+    source.addEventListener('error', handlers.error)
 
     return () => {
-      source.removeEventListener('message', push)
+      // Remove event listeners
+      source.removeEventListener('message', handlers.message)
+      source.removeEventListener('error', handlers.error)
+      // Close the stream
       source.close()
     }
   }, [stack.name, push])
