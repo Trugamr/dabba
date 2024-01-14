@@ -12,10 +12,10 @@ type ManagedStack = {
   managed: true
 }
 
-type StackDetails = z.infer<typeof StackDetailsSchema>
+type StackSummary = z.infer<typeof StackSummarySchema>
 
-export type Stack = Omit<StackDetails, 'status'> & {
-  status: StackDetails['status'] | 'inactive'
+export type Stack = Omit<StackSummary, 'status'> & {
+  status: StackSummary['status'] | 'inactive'
   managed: boolean
 }
 
@@ -98,7 +98,7 @@ export async function destroyStack(stack: Pick<Stack, 'path'>) {
 // Example: running(2) -> { current: 'running', count: 2 }
 const STACK_STATUS_REGEX = /^(?<current>\w+)\((?<count>\d+)\)$/
 
-const StackDetailsSchema = z
+const StackSummarySchema = z
   .object({
     Name: z.string(),
     Status: z.preprocess(
@@ -123,74 +123,74 @@ const StackDetailsSchema = z
     }
   })
 
-const StacksDetailsSchema = z.array(StackDetailsSchema)
+const StacksSummariesSchema = z.array(StackSummarySchema)
 
 /**
- * Get details about stacks that are currently active (i.e. running or stopped)
+ * Get summary about stacks that are currently active (i.e. running or stopped)
  */
-export async function getStacksDetails() {
+export async function getStacksSummaries() {
   let stdout: string
   try {
     const result = await execa('docker', ['compose', 'ls', '--all', '--format', 'json'])
     stdout = result.stdout
   } catch (error) {
-    throw new Error('Failed to get stacks details')
+    throw new Error('Failed to get stacks summaries')
   }
 
   let json: unknown = null
   try {
     json = JSON.parse(stdout)
   } catch (error) {
-    throw new Error('Failed to parse stacks details JSON')
+    throw new Error('Failed to parse stacks summaries JSON')
   }
 
-  return StacksDetailsSchema.parse(json)
+  return StacksSummariesSchema.parse(json)
 }
 
 /**
- * Get stacks list with details about their status
+ * Get stacks list with summaries about their status
  */
 export async function getStacks() {
-  const [managedStacks, stacksDetails] = await Promise.all([
+  const [managedStacks, stacksSummaries] = await Promise.all([
     getManagedStacks(),
-    getStacksDetails(),
+    getStacksSummaries(),
   ])
 
-  const defaultDetails = {
+  const defaultSummary = {
     status: 'inactive',
     services: 0,
   } as const
 
   const stacks: Stack[] = []
 
-  // Add managed stack with details if found
+  // Add managed stack with summary if found
   for (const managedStack of managedStacks) {
-    const detailsIndex = stacksDetails.findIndex(stack => stack.path === managedStack.path)
-    if (detailsIndex !== -1) {
-      // Remove the stack from the details list
-      const [details] = stacksDetails.splice(detailsIndex, 1)
-      invariant(details, 'Stack details should be defined')
+    const summaryIndex = stacksSummaries.findIndex(stack => stack.path === managedStack.path)
+    if (summaryIndex !== -1) {
+      // Remove the stack from the summaries list
+      const [summary] = stacksSummaries.splice(summaryIndex, 1)
+      invariant(summary, 'Stack summary should be defined')
 
       stacks.push({
         ...managedStack,
-        ...details,
+        ...summary,
       })
     } else {
       stacks.push({
         ...managedStack,
-        ...defaultDetails,
+        ...defaultSummary,
       })
     }
   }
 
-  // Add remaining stacks from details list
-  for (const stackDetails of stacksDetails) {
+  // Add remaining stacks from summaries list
+  for (const stackSummary of stacksSummaries) {
     // TODO: Handle dupicate stack names
     // Currently we prefer managed stacks over unmanaged ones
-    const stackWithSameNameExists = stacks.some(stack => stack.name === stackDetails.name)
+    const stackWithSameNameExists = stacks.some(stack => stack.name === stackSummary.name)
     if (!stackWithSameNameExists) {
       stacks.push({
-        ...stackDetails,
+        ...stackSummary,
         managed: false,
       })
     }
