@@ -3,7 +3,7 @@ import type { Stack } from '~/lib/stack.server'
 import { cn } from '~/lib/utils'
 
 type StackLogs = {
-  stack: Pick<Stack, 'name'>
+  stack: Pick<Stack, 'name' | 'status'>
   className?: string
 } & Pick<UseStackLogsOptions, 'initialLogs'>
 

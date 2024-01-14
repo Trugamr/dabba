@@ -1,6 +1,5 @@
-import { useReducer } from 'react'
+import { useEffect, useReducer } from 'react'
 import type { Stack } from '~/lib/stack.server'
-import { useEventSource } from '~/lib/hooks/use-event-source'
 
 export type UseStackLogsOptions = {
   initialLogs?: string[]
@@ -10,7 +9,7 @@ const defaultUseStackLogsOptions: UseStackLogsOptions = {}
 const defaultInitialLogs: string[] = []
 
 export function useStackLogs(
-  stack: Pick<Stack, 'name'>,
+  stack: Pick<Stack, 'name' | 'status'>,
   { initialLogs = defaultInitialLogs }: UseStackLogsOptions = defaultUseStackLogsOptions,
 ) {
   const [logs, push] = useReducer((logs: string[], log: MessageEvent) => {
@@ -20,7 +19,21 @@ export function useStackLogs(
     return logs
   }, initialLogs)
 
-  useEventSource(`/api/stacks/${stack.name}/logs`, push)
+  useEffect(() => {
+    // We don't want to listen for logs if the stack is not running
+    if (stack.status !== 'running') {
+      return
+    }
+
+    // Open a new stream of logs
+    const source = new EventSource(`/api/stacks/${stack.name}/logs`)
+    source.addEventListener('message', push)
+
+    return () => {
+      source.removeEventListener('message', push)
+      source.close()
+    }
+  }, [stack.name, stack.status, push])
 
   return logs
 }
