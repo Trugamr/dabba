@@ -13,7 +13,7 @@ import { Button } from '~/components/ui/button'
 import { BombIcon, PlayIcon, SquareIcon, UnplugIcon } from 'lucide-react'
 import { z } from 'zod'
 import { P, match } from 'ts-pattern'
-import { StatusIndicator } from '~/components/status-indicator'
+import { StackStatusIndicator } from '~/components/stack-status-indicator'
 import { StackLogs } from '~/components/stack-logs'
 import { badRequest, notFound } from '~/lib/utils'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
@@ -80,15 +80,17 @@ export default function StacksNameRoute() {
       <div className="space-y-1">
         <h3 className="flex gap-x-1 text-2xl font-medium">
           <span>{stack.name}</span>
-          {stack.status === 'running' ? <span>({stack.services})</span> : null}
+          {stack.statuses ? (
+            <span>({stack.statuses.reduce((count, status) => status.count, 0)})</span>
+          ) : null}
         </h3>
         <p className="space-x-1 leading-tight">
-          <StatusIndicator status={stack.status} />
+          <StackStatusIndicator status={stack.status} />
           <span>
             {match(stack.status)
-              .with('created', () => 'Created')
-              .with('running', () => 'Running')
+              .with('active', () => 'Active')
               .with('stopped', () => 'Stopped')
+              .with('transitioning', () => 'Transitioning')
               .with('inactive', () => 'Inactive')
               .exhaustive()}
           </span>
@@ -114,7 +116,7 @@ export default function StacksNameRoute() {
                 <span>Start</span>
               </Button>
             ))
-            .with(P.union('created', 'running'), () => (
+            .with(P.union('active', 'transitioning'), () => (
               <Button
                 className="gap-x-1.5"
                 name="intent"
@@ -127,21 +129,18 @@ export default function StacksNameRoute() {
               </Button>
             ))
             .exhaustive()}
-          {match(stack.status)
-            .with(P.union('created', 'running', 'stopped'), () => (
-              <Button
-                className="gap-x-1.5"
-                name="intent"
-                value="destroy"
-                size="sm"
-                variant="destructive"
-              >
-                <BombIcon className="h-[0.95em] w-[0.95em] fill-current" />
-                <span>Destroy</span>
-              </Button>
-            ))
-            .with('inactive', () => null)
-            .exhaustive()}
+          {stack.statuses ? (
+            <Button
+              className="gap-x-1.5"
+              name="intent"
+              value="destroy"
+              size="sm"
+              variant="destructive"
+            >
+              <BombIcon className="h-[0.95em] w-[0.95em] fill-current" />
+              <span>Destroy</span>
+            </Button>
+          ) : null}
         </div>
       </Form>
 
@@ -151,7 +150,7 @@ export default function StacksNameRoute() {
         <StackLogs
           // Avoid re-mounting the component when the stack status changes
           // TODO: We should handle status changes in the component itself
-          key={`${stack.name}::${stack.status}`}
+          key={`${stack.name}::${JSON.stringify(stack.statuses)}`}
           className="mt-2"
           stack={stack}
           initialLogs={initialLogs}

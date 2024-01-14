@@ -2,7 +2,7 @@ import { NavLink, Outlet, json, useLoaderData } from '@remix-run/react'
 import { buttonVariants } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { getStacks } from '~/lib/stack.server'
-import { StatusIndicator } from '~/components/status-indicator'
+import { StackStatusIndicator } from '~/components/stack-status-indicator'
 
 export async function loader() {
   const stacks = await getStacks()
@@ -33,7 +33,7 @@ export default function StacksRoute() {
                     })
                   }
                 >
-                  <StatusIndicator status={stack.status} />
+                  <StackStatusIndicator status={stack.status} />
                   <span className="w-full truncate" title={stack.name}>
                     {stack.name}
                   </span>

@@ -7,15 +7,15 @@ type StackIndicatorProps = {
   className?: string
 }
 
-export function StatusIndicator({ status, className }: StackIndicatorProps) {
+export function StackStatusIndicator({ status, className }: StackIndicatorProps) {
   return (
     <span
       className={cn(
         'inline-block h-2.5 w-2.5 shrink-0 rounded-full',
         match(status)
-          .with('created', () => 'bg-yellow-400')
-          .with('running', () => 'bg-green-400')
+          .with('active', () => 'bg-green-400')
           .with('stopped', () => 'bg-red-400')
+          .with('transitioning', () => 'bg-yellow-400')
           .with('inactive', () => 'bg-gray-400')
           .exhaustive(),
         className,

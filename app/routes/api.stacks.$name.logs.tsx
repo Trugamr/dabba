@@ -23,6 +23,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }
     }
 
+    // TODO: Close connection when process exits or errors
+
     process.stdout?.addListener('data', handler)
 
     return function cleanup() {

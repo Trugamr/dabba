@@ -4,6 +4,7 @@ import { env } from './env.server'
 import { execa } from 'execa'
 import { z } from 'zod'
 import { invariant } from '@epic-web/invariant'
+import { match } from 'ts-pattern'
 
 type ManagedStack = {
   name: string
@@ -14,8 +15,9 @@ type ManagedStack = {
 
 type StackSummary = z.infer<typeof StackSummarySchema>
 
-export type Stack = Omit<StackSummary, 'status'> & {
+export type Stack = Omit<StackSummary, 'status' | 'statuses'> & {
   status: StackSummary['status'] | 'inactive'
+  statuses: StackSummary['statuses'] | null
   managed: boolean
 }
 
@@ -95,29 +97,38 @@ export async function destroyStack(stack: Pick<Stack, 'path'>) {
   }
 }
 
-// Example: running(2) -> { current: 'running', count: 2 }
-const STACK_STATUS_REGEX = /^(?<current>\w+)\((?<count>\d+)\)$/
+// Example: running(2) -> { value: 'running', count: 2 }
+const SERVICE_STATUS_REGEX = /^(?<value>\w+)\((?<count>\d+)\)$/
+
+const ServiceStatusSchema = z.preprocess(
+  value => (typeof value === 'string' ? SERVICE_STATUS_REGEX.exec(value)?.groups : value),
+  z.object({
+    value: z.enum(['paused', 'restarting', 'removing', 'running', 'dead', 'created', 'exited']),
+    count: z.coerce.number(),
+  }),
+)
 
 const StackSummarySchema = z
   .object({
     Name: z.string(),
     Status: z.preprocess(
-      value => (typeof value === 'string' ? STACK_STATUS_REGEX.exec(value)?.groups : value),
-      z.object({
-        current: z
-          .enum(['created', 'running', 'exited'])
-          // Map `exited` to `stopped` for simplicity
-          .transform(value => (value === 'exited' ? 'stopped' : value)),
-        count: z.coerce.number(),
-      }),
+      value => (typeof value === 'string' ? value.split(', ') : value),
+      z.array(ServiceStatusSchema),
     ),
     ConfigFiles: z.string(),
   })
   .transform(values => {
+    const statuses = values.Status
+    const status = match(statuses.map(s => s.value))
+      // When every service has same status there is only one entry in the array
+      .with(['running'], () => 'active' as const)
+      .with(['exited'], () => 'stopped' as const)
+      .otherwise(() => 'transitioning' as const)
+
     return {
       name: values.Name,
-      status: values.Status.current,
-      services: values.Status.count,
+      status,
+      statuses,
       directory: path.dirname(values.ConfigFiles),
       path: values.ConfigFiles,
     }
@@ -158,8 +169,8 @@ export async function getStacks() {
 
   const defaultSummary = {
     status: 'inactive',
-    services: 0,
-  } as const
+    statuses: null,
+  } satisfies Pick<Stack, 'status' | 'statuses'>
 
   const stacks: Stack[] = []
 

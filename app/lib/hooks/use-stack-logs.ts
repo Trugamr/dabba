@@ -9,7 +9,7 @@ const defaultUseStackLogsOptions: UseStackLogsOptions = {}
 const defaultInitialLogs: string[] = []
 
 export function useStackLogs(
-  stack: Pick<Stack, 'name' | 'status'>,
+  stack: Pick<Stack, 'name'>,
   { initialLogs = defaultInitialLogs }: UseStackLogsOptions = defaultUseStackLogsOptions,
 ) {
   const [logs, push] = useReducer((logs: string[], log: MessageEvent) => {
@@ -20,11 +20,6 @@ export function useStackLogs(
   }, initialLogs)
 
   useEffect(() => {
-    // We don't want to listen for logs if the stack is not running
-    if (stack.status !== 'running') {
-      return
-    }
-
     // Open a new stream of logs
     const source = new EventSource(`/api/stacks/${stack.name}/logs`)
     source.addEventListener('message', push)
@@ -33,7 +28,7 @@ export function useStackLogs(
       source.removeEventListener('message', push)
       source.close()
     }
-  }, [stack.name, stack.status, push])
+  }, [stack.name, push])
 
   return logs
 }
