@@ -100,10 +100,22 @@ export async function destroyStack(stack: Pick<Stack, 'path'>) {
 // Example: running(2) -> { value: 'running', count: 2 }
 const SERVICE_STATUS_REGEX = /^(?<value>\w+)\((?<count>\d+)\)$/
 
-const ServiceStatusSchema = z.preprocess(
+export type ServiceState = z.infer<typeof ServiceStateSchema>
+
+const ServiceStateSchema = z.enum([
+  'paused',
+  'restarting',
+  'removing',
+  'running',
+  'dead',
+  'created',
+  'exited',
+])
+
+const ServiceStatusesSchema = z.preprocess(
   value => (typeof value === 'string' ? SERVICE_STATUS_REGEX.exec(value)?.groups : value),
   z.object({
-    value: z.enum(['paused', 'restarting', 'removing', 'running', 'dead', 'created', 'exited']),
+    value: ServiceStateSchema,
     count: z.coerce.number(),
   }),
 )
@@ -113,7 +125,7 @@ const StackSummarySchema = z
     Name: z.string(),
     Status: z.preprocess(
       value => (typeof value === 'string' ? value.split(', ') : value),
-      z.array(ServiceStatusSchema),
+      z.array(ServiceStatusesSchema),
     ),
     ConfigFiles: z.string(),
   })
@@ -148,7 +160,7 @@ export async function getStacksSummaries() {
     throw new Error('Failed to get stacks summaries')
   }
 
-  let json: unknown = null
+  let json: unknown
   try {
     json = JSON.parse(stdout)
   } catch (error) {
@@ -236,4 +248,134 @@ export function getStackLogsProcess(stack: Pick<ManagedStack, 'directory'>) {
   return execa('docker', ['compose', 'logs', '--tail', '0', '--follow'], {
     cwd: stack.directory,
   })
+}
+
+export type ServiceCanonicalConfig = z.infer<typeof ServiceCanonicalConfigSchema>
+
+const ServiceCanonicalConfigSchema = z
+  .object({
+    command: z.array(z.string()).nullable(),
+    entrypoint: z.string().nullable(),
+    image: z.string(),
+    ports: z
+      .array(
+        z.object({
+          mode: z.enum(['host', 'ingress']),
+          target: z.number(),
+          published: z.string(),
+          protocol: z.enum(['tcp', 'udp']),
+        }),
+      )
+      .optional(),
+  })
+  .transform(values => {
+    return {
+      ...values,
+      state: 'inactive',
+    } as const
+  })
+
+const StackCanonicalConfigSchema = z.object({
+  name: z.string(),
+  services: z.record(z.string(), ServiceCanonicalConfigSchema),
+})
+
+/**
+ * Get compose config for a stack
+ */
+export async function getCanonicalStackConfig(stack: Pick<Stack, 'directory'>) {
+  let stdout: string
+  try {
+    const result = await execa('docker', ['compose', 'config', '--format', 'json'], {
+      cwd: stack.directory,
+    })
+    stdout = result.stdout
+  } catch (error) {
+    throw new Error('Failed to get stack config')
+  }
+
+  let json: unknown
+  try {
+    json = JSON.parse(stdout)
+  } catch (error) {
+    throw new Error('Failed to parse stack config JSON')
+  }
+
+  return StackCanonicalConfigSchema.parse(json)
+}
+
+const StackServiceDetailsSchema = z
+  .object({
+    Name: z.string(),
+    Service: z.string(),
+    State: ServiceStateSchema,
+  })
+  .transform(values => {
+    return {
+      name: values.Name,
+      service: values.Service,
+      state: values.State,
+    } as const
+  })
+
+const StackServicesDetailsSchema = z.array(StackServiceDetailsSchema)
+
+/**
+ * Get extended stack details
+ */
+export async function getStackDetails(stack: Pick<Stack, 'directory'>) {
+  const config = await getCanonicalStackConfig(stack)
+
+  let stdout: string
+  try {
+    const result = await execa('docker', ['compose', 'ps', '--all', '--format', 'json'], {
+      cwd: stack.directory,
+    })
+    stdout = result.stdout
+  } catch (error) {
+    throw new Error('Failed to get stack details')
+  }
+
+  let lines: unknown[]
+  try {
+    lines = stdout
+      .split('\n')
+      .filter(Boolean)
+      .map(line => JSON.parse(line))
+  } catch (error) {
+    throw new Error('Failed to parse stack details JSON')
+  }
+
+  const details = StackServicesDetailsSchema.parse(lines)
+
+  const merged: {
+    services: Record<
+      string,
+      Omit<ServiceCanonicalConfig, 'state'> & {
+        info?: {
+          name: string
+          state: ServiceState
+        }
+      }
+    >
+  } = {
+    services: {
+      ...structuredClone(config.services),
+    },
+  }
+
+  // Merge details into config
+  for (const detail of details) {
+    if (detail.service in merged.services) {
+      const service = merged.services[detail.service]
+      invariant(service, 'Service should be defined')
+
+      service.info = {
+        name: detail.name,
+        state: detail.state,
+      }
+    }
+  }
+
+  return merged
 }

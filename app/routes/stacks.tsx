@@ -16,7 +16,7 @@ export default function StacksRoute() {
   const { stacks } = useLoaderData<typeof loader>()
 
   return (
-    <div className="flex min-h-full">
+    <div className="flex h-full">
       <aside className="w-60 shrink-0 border-r bg-background p-4">
         <Input className="mt-2" placeholder="Search stacks" />
         <ul className="mt-4 space-y-2">
@@ -43,7 +43,7 @@ export default function StacksRoute() {
           })}
         </ul>
       </aside>
-      <div className="container min-w-0 grow p-6">
+      <div className="container min-w-0 grow overflow-y-auto p-6">
         <Outlet />
       </div>
     </div>

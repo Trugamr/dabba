@@ -34,7 +34,7 @@ function Document({ children }: DocumentProps) {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className="bg-secondary">
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -59,7 +59,7 @@ export default function App() {
   return (
     <Document>
       <GlobalNavigationProgress />
-      <div className="flex min-h-screen flex-col bg-secondary">
+      <div className="flex min-h-screen flex-col">
         <header className="flex gap-x-8 border-b bg-background p-4">
           <Link to="/" className="flex items-center gap-x-1.5 text-xl font-medium">
             <PackageIcon className="h-[1.2em] w-[1.2em]" />

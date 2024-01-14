@@ -6,6 +6,7 @@ import {
   startStack,
   stopStack,
   destroyStack,
+  getStackDetails,
 } from '~/lib/stack.server'
 import { Form, useLoaderData } from '@remix-run/react'
 import { Input } from '~/components/ui/input'
@@ -17,6 +18,7 @@ import { StackStatusIndicator } from '~/components/stack-status-indicator'
 import { StackLogs } from '~/components/stack-logs'
 import { badRequest, notFound } from '~/lib/utils'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
+import { ServiceStateIndicator } from '~/components/service-state-indicator'
 
 const StackFormSchema = z.object({
   stack: z.string(),
@@ -26,15 +28,20 @@ const StackFormSchema = z.object({
 export async function loader({ params }: ActionFunctionArgs) {
   invariantResponse(params.name, 'Stack name is required')
 
+  // TODO: Optimize by preventing stacks summaries call
   const stack = await getStackByName(params.name)
   if (!stack) {
     throw notFound(`Stack "${params.name}" not found`)
   }
 
+  const details = await getStackDetails(stack)
+
+  // TODO: Consider deferring this to the client
   const initialLogs = await getStackInitialLogs(stack)
 
   return json({
     stack,
+    services: details.services,
     initialLogs,
   })
 }
@@ -73,10 +80,10 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function StacksNameRoute() {
-  const { stack, initialLogs } = useLoaderData<typeof loader>()
+  const { stack, services, initialLogs } = useLoaderData<typeof loader>()
 
   return (
-    <section>
+    <div>
       <div className="space-y-1">
         <h3 className="flex gap-x-1 text-2xl font-medium">
           <span>{stack.name}</span>
@@ -86,14 +93,7 @@ export default function StacksNameRoute() {
         </h3>
         <p className="space-x-1 leading-tight">
           <StackStatusIndicator status={stack.status} />
-          <span>
-            {match(stack.status)
-              .with('active', () => 'Active')
-              .with('stopped', () => 'Stopped')
-              .with('transitioning', () => 'Transitioning')
-              .with('inactive', () => 'Inactive')
-              .exhaustive()}
-          </span>
+          <span className="capitalize">{stack.status}</span>
         </p>
         <p className="truncate text-sm text-muted-foreground">{stack.directory}</p>
       </div>
@@ -144,18 +144,41 @@ export default function StacksNameRoute() {
         </div>
       </Form>
 
-      <div className="mt-6">
+      <section className="mt-6">
+        <h3 className="text-xl font-medium">Services</h3>
+        <p className="text-muted-foreground">Details about services in this stack</p>
+        <ul className="mt-2 flex max-w-96 flex-col gap-y-2">
+          {Object.entries(services).map(([name, service]) => {
+            const state = service.info?.state ?? 'inactive'
+
+            return (
+              <li key={name} className="flex flex-col rounded-md border bg-background p-3">
+                <h4 className="text-lg font-medium">{service.info?.name ?? name}</h4>
+                <p className="truncate text-sm text-muted-foreground" title={service.image}>
+                  {service.image}
+                </p>
+                <div className="mt-1.5 text-sm">
+                  <ServiceStateIndicator state={state} />
+                  <span className="ml-1 capitalize">{state}</span>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      </section>
+
+      <section className="mt-6">
         <h3 className="text-xl font-medium">Logs</h3>
         <p className="text-muted-foreground">Output from all services in this stack</p>
         <StackLogs
           // Avoid re-mounting the component when the stack status changes
           // TODO: We should handle status changes in the component itself
           key={`${stack.name}::${JSON.stringify(stack.statuses)}`}
-          className="mt-2"
+          className="mt-2 h-80 max-w-2xl"
           stack={stack}
           initialLogs={initialLogs}
         />
-      </div>
-    </section>
+      </section>
+    </div>
   )
 }

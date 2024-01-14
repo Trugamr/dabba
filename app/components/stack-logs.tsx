@@ -15,7 +15,7 @@ export function StackLogs({ stack, className, initialLogs }: StackLogs) {
   return (
     <div
       className={cn(
-        'flex h-80 max-w-2xl flex-col-reverse overflow-y-auto rounded-md border bg-background text-sm',
+        'flex flex-col-reverse overflow-y-auto rounded-md border bg-background text-sm',
         className,
       )}
     >
