@@ -1,36 +1,41 @@
-# Welcome to Remix + Vite!
+# dabba
 
-📖 See the [Remix docs](https://remix.run/docs) and the [Remix Vite docs](https://remix.run/docs/en/main/future/vite) for details on supported features.
+Self-hosted dashboard to manage docker compose stacks.
 
-## Development
+[![GitHub issues](https://img.shields.io/github/issues/trugamr/dabba)](https://github.com/trugamr/dabba/issues)
 
-Run the Vite dev server:
+<img src="assets/preview.png" />
 
-```shellscript
-npm run dev
-```
+> [!NOTE] 
+> This project is still in early development, there will be bugs and missing features.
 
-## Deployment
+## Building and Running
 
-First, build your app for production:
+Before running dabba, you will need to have the following prerequisites installed:
 
-```sh
-npm run build
-```
+- [Node.js](https://nodejs.org/)
+- [pnpm](https://pnpm.io/)
 
-Then run the app in production mode:
+1. Clone the repository using `git clone https://github.com/trugamr/dabba.git`
+2. Install dependencies using `pnpm install`
+3. Create a `.env` file using the provided `.env.example` file as a template, and fill in your own values.
+4. Build the project using `pnpm run build`
+5. Start the bot using `pnpm run start`
 
-```sh
-npm start
-```
+## Docker Compose
 
-Now you'll need to pick a host to deploy it to.
+Recommend way to run dabba is using docker-compose:
 
-### DIY
+1. Clone the repository using `git clone https://github.com/trugamr/dabba.git`
+2. Copy `.env.example` to `.env` and fill in your own values.
+3. Run `docker-compose up -d`
 
-If you're familiar with deploying Node applications, the built-in Remix app server is production-ready.
+You will now be able to access dabba at `http://localhost:6040`.
 
-Make sure to deploy the output of `npm run build`
+## Contributing
 
-- `build/server`
-- `build/client`
+If you would like to contribute, you can fork the repository, create a new feature or bugfix branch, and create a pull request.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE.md) file for more information.
