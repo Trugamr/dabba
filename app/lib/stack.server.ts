@@ -5,12 +5,13 @@ import { execa } from 'execa'
 import { z } from 'zod'
 import { invariant } from '@epic-web/invariant'
 import { match } from 'ts-pattern'
+import { isExecaError } from './execa.server'
 
 type ManagedStack = {
   name: string
   directory: string
   path: string
-  managed: true
+  control: 'full'
 }
 
 type StackSummary = z.infer<typeof StackSummarySchema>
@@ -18,7 +19,7 @@ type StackSummary = z.infer<typeof StackSummarySchema>
 export type Stack = Omit<StackSummary, 'status' | 'statuses'> & {
   status: StackSummary['status'] | 'inactive'
   statuses: StackSummary['statuses'] | null
-  managed: boolean
+  control: 'full' | 'partial' | 'none'
 }
 
 export function getManagedStacksDirectory() {
@@ -52,7 +53,7 @@ export async function getManagedStacks() {
             name: stackName,
             directory: stackDirectory,
             path: configPath,
-            managed: true,
+            control: 'full',
           })
         }
       } catch (error) {
@@ -67,9 +68,13 @@ export async function getManagedStacks() {
 export async function startStack(stack: Pick<Stack, 'path'>) {
   const directory = path.dirname(stack.path)
   try {
-    await execa('docker', ['compose', 'up', '--detach', '--remove-orphans'], {
-      cwd: directory,
-    })
+    await execa(
+      'docker',
+      ['compose', '--file', stack.path, 'up', '--detach', '--remove-orphans'],
+      {
+        cwd: directory,
+      },
+    )
   } catch (error) {
     throw new Error(`Failed to start stack "${stack.path}"`)
   }
@@ -78,7 +83,7 @@ export async function startStack(stack: Pick<Stack, 'path'>) {
 export async function stopStack(stack: Pick<Stack, 'path'>) {
   const directory = path.dirname(stack.path)
   try {
-    await execa('docker', ['compose', 'stop'], {
+    await execa('docker', ['compose', '--file', stack.path, 'stop'], {
       cwd: directory,
     })
   } catch (error) {
@@ -89,7 +94,7 @@ export async function stopStack(stack: Pick<Stack, 'path'>) {
 export async function destroyStack(stack: Pick<Stack, 'path'>) {
   const directory = path.dirname(stack.path)
   try {
-    await execa('docker', ['compose', 'down', '--remove-orphans'], {
+    await execa('docker', ['compose', '--file', stack.path, 'down', '--remove-orphans'], {
       cwd: directory,
     })
   } catch (error) {
@@ -188,7 +193,7 @@ export async function getStacks() {
 
   // Add managed stack with summary if found
   for (const managedStack of managedStacks) {
-    const summaryIndex = stacksSummaries.findIndex(stack => stack.path === managedStack.path)
+    const summaryIndex = stacksSummaries.findIndex(stack => stack.name === managedStack.name)
     if (summaryIndex !== -1) {
       // Remove the stack from the summaries list
       const [summary] = stacksSummaries.splice(summaryIndex, 1)
@@ -196,7 +201,13 @@ export async function getStacks() {
 
       stacks.push({
         ...managedStack,
-        ...summary,
+        status: summary.status,
+        statuses: summary.statuses,
+        /**
+         * Stack is partially controlled when it's path doesn't match the path of the summary
+         * This means same named stack is started outside of the stacks and it may or may not be the same stack
+         */
+        control: managedStack.path === summary.path ? 'full' : 'partial',
       })
     } else {
       stacks.push({
@@ -214,7 +225,7 @@ export async function getStacks() {
     if (!stackWithSameNameExists) {
       stacks.push({
         ...stackSummary,
-        managed: false,
+        control: 'none',
       })
     }
   }
@@ -231,21 +242,30 @@ export async function getStackByName(name: string) {
   return stack
 }
 
-export async function getStackInitialLogs(stack: Pick<ManagedStack, 'directory'>) {
+export async function getStackInitialLogs(stack: Pick<ManagedStack, 'directory' | 'path'>) {
   try {
-    const { stdout } = await execa('docker', ['compose', 'logs', '--tail', '50'], {
-      cwd: stack.directory,
-      stripFinalNewline: false,
-    })
+    const { stdout } = await execa(
+      'docker',
+      ['compose', '--file', stack.path, 'logs', '--tail', '50'],
+      {
+        cwd: stack.directory,
+        stripFinalNewline: false,
+      },
+    )
     return [stdout]
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error("Failed to get stack's initial logs", error)
+    if (isExecaError(error)) {
+      // TODO: User debug log
+      // eslint-disable-next-line no-console
+      console.error(error.stderr)
+      throw new Error('Failed to get stack logs')
+    }
+    throw error
   }
 }
 
-export function getStackLogsProcess(stack: Pick<ManagedStack, 'directory'>) {
-  return execa('docker', ['compose', 'logs', '--tail', '0', '--follow'], {
+export function getStackLogsProcess(stack: Pick<ManagedStack, 'directory' | 'path'>) {
+  return execa('docker', ['compose', '--file', stack.path, 'logs', '--tail', '0', '--follow'], {
     cwd: stack.directory,
   })
 }
@@ -283,12 +303,16 @@ const StackCanonicalConfigSchema = z.object({
 /**
  * Get compose config for a stack
  */
-export async function getCanonicalStackConfig(stack: Pick<Stack, 'directory'>) {
+export async function getCanonicalStackConfig(stack: Pick<Stack, 'directory' | 'path'>) {
   let stdout: string
   try {
-    const result = await execa('docker', ['compose', 'config', '--format', 'json'], {
-      cwd: stack.directory,
-    })
+    const result = await execa(
+      'docker',
+      ['compose', '--file', stack.path, 'config', '--format', 'json'],
+      {
+        cwd: stack.directory,
+      },
+    )
     stdout = result.stdout
   } catch (error) {
     throw new Error('Failed to get stack config')
@@ -323,14 +347,18 @@ const StackServicesDetailsSchema = z.array(StackServiceDetailsSchema)
 /**
  * Get extended stack details
  */
-export async function getStackDetails(stack: Pick<Stack, 'directory'>) {
+export async function getStackDetails(stack: Pick<Stack, 'directory' | 'path'>) {
   const config = await getCanonicalStackConfig(stack)
 
   let stdout: string
   try {
-    const result = await execa('docker', ['compose', 'ps', '--all', '--format', 'json'], {
-      cwd: stack.directory,
-    })
+    const result = await execa(
+      'docker',
+      ['compose', '--file', stack.path, 'ps', '--all', '--format', 'json'],
+      {
+        cwd: stack.directory,
+      },
+    )
     stdout = result.stdout
   } catch (error) {
     throw new Error('Failed to get stack details')

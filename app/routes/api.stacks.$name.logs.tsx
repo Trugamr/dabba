@@ -12,7 +12,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw notFound(`Stack "${params.name}" not found`)
   }
 
-  const process = getStackLogsProcess({ directory: stack.directory })
+  const process = getStackLogsProcess({ directory: stack.directory, path: stack.path })
 
   // We need to create new AbortController so we can proactively close the connection from the server
   const controller = new AbortController()
