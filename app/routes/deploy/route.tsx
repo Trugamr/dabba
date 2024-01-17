@@ -13,9 +13,13 @@ import { Input } from '~/components/ui/input'
 import { ActionFunctionArgs, json, redirect } from '@remix-run/node'
 import { useRef } from 'react'
 import { Button } from '~/components/ui/button'
-import { XIcon } from 'lucide-react'
+import { PlusIcon, RocketIcon, XIcon } from 'lucide-react'
 import { cn } from '~/lib/utils'
-import { DeploymentSchema, DeploymentServiceSchema } from './schema'
+import {
+  DeploymentSchema,
+  DeploymentServicePortSchema,
+  DeploymentServiceSchema,
+} from './schema'
 import { DeploymentSchemaServer } from './schema.server'
 import { createNewDeployment } from '~/lib/deployment.server'
 
@@ -104,16 +108,19 @@ export default function DeployRoute() {
           <input type="submit" hidden />
 
           <section>
-            <label htmlFor={fields.name.id}>
-              <h3 className="text-lg font-medium">Name</h3>
-              <p className="text-muted-foreground">Give your deployment a name</p>
-            </label>
-            <Input className="mt-2" autoComplete="off" {...conform.input(fields.name)} />
-            {fields.name.error ? (
-              <p className="mt-0.5 text-sm text-destructive" id={fields.name.errorId}>
-                {fields.name.error}
-              </p>
-            ) : null}
+            <h3 className="text-lg font-medium">General</h3>
+            <p className="text-muted-foreground">Basic information about your deployment</p>
+            <div className="mt-4 space-y-2">
+              <div>
+                <label htmlFor={fields.name.id}>Name</label>
+                <Input className="mt-1" autoComplete="off" {...conform.input(fields.name)} />
+                {fields.name.error ? (
+                  <p className="mt-0.5 text-sm text-destructive" id={fields.name.errorId}>
+                    {fields.name.error}
+                  </p>
+                ) : null}
+              </div>
+            </div>
           </section>
 
           <section className="mt-6">
@@ -128,7 +135,7 @@ export default function DeployRoute() {
               {services.map((service, index) => {
                 return (
                   <li key={service.key} className="flex gap-x-4">
-                    <ServiceFieldset config={service} className="grow" />
+                    <ServiceFieldset formRef={form.ref} config={service} className="grow" />
                     <Button
                       className="mt-7 shrink-0"
                       size="icon"
@@ -142,8 +149,8 @@ export default function DeployRoute() {
               })}
             </ul>
             <div className="mt-4 flex justify-end">
-              <Button variant="outline" {...list.insert(fields.services.name)}>
-                Add Service
+              <Button size="icon" variant="outline" {...list.insert(fields.services.name)}>
+                <PlusIcon />
               </Button>
             </div>
           </section>
@@ -154,7 +161,10 @@ export default function DeployRoute() {
                 {form.error}
               </p>
             ) : null}
-            <Button>Save & Deploy</Button>
+            <Button className="gap-x-1.5">
+              <RocketIcon className="h-[1.2em] w-[1.2em]" />
+              <span>Create Deployment</span>
+            </Button>
           </div>
         </Form>
       </div>
@@ -165,8 +175,78 @@ export default function DeployRoute() {
 function ServiceFieldset({
   config,
   className,
+  formRef,
 }: {
   config: FieldConfig<z.infer<typeof DeploymentServiceSchema>>
+  className?: string
+  formRef: React.RefObject<HTMLFormElement>
+}) {
+  const fieldsetRef = useRef<HTMLFieldSetElement>(null)
+  const fields = useFieldset(fieldsetRef, config)
+
+  const ports = useFieldList(formRef, fields.ports)
+
+  return (
+    <div className={cn('flex flex-col gap-y-4', className)}>
+      <fieldset
+        ref={fieldsetRef}
+        className={cn('grid gap-4 sm:grid-cols-2')}
+        {...conform.fieldset(config)}
+      >
+        <div>
+          <label htmlFor={fields.name.id}>Name</label>
+          <Input className="mt-1" autoComplete="off" {...conform.input(fields.name)} />
+          {fields.name.error ? (
+            <p className="mt-0.5 text-sm text-destructive" id={fields.name.errorId}>
+              {fields.name.error}
+            </p>
+          ) : null}
+        </div>
+        <div>
+          <label htmlFor={fields.image.id}>Image</label>
+          <Input className="mt-1" autoComplete="off" {...conform.input(fields.image)} />
+          {fields.image.error ? (
+            <p className="mt-0.5 text-sm text-destructive" id={fields.image.errorId}>
+              {fields.image.error}
+            </p>
+          ) : null}
+        </div>
+      </fieldset>
+      <div>
+        <h4 className="font-medium">Ports</h4>
+        <p className="text-sm text-muted-foreground">Expose ports for your service</p>
+        <ul className="mt-4 space-y-2">
+          {ports.map((port, index) => {
+            return (
+              <li key={port.key} className="flex gap-x-4">
+                <ServicePortsFieldset config={port} className="grow" />
+                <Button
+                  className="mt-7 shrink-0"
+                  size="icon"
+                  variant="destructive"
+                  {...list.remove(fields.ports.name, { index })}
+                >
+                  <XIcon />
+                </Button>
+              </li>
+            )
+          })}
+        </ul>
+        <div className="mt-4 flex justify-end">
+          <Button variant="outline" size="icon" {...list.insert(fields.ports.name)}>
+            <PlusIcon />
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ServicePortsFieldset({
+  config,
+  className,
+}: {
+  config: FieldConfig<z.infer<typeof DeploymentServicePortSchema>>
   className?: string
 }) {
   const ref = useRef<HTMLFieldSetElement>(null)
@@ -179,20 +259,32 @@ function ServiceFieldset({
       {...conform.fieldset(config)}
     >
       <div>
-        <label htmlFor={fields.name.id}>Name</label>
-        <Input className="mt-1" autoComplete="off" {...conform.input(fields.name)} />
-        {fields.name.error ? (
-          <p className="mt-0.5 text-sm text-destructive" id={fields.name.errorId}>
-            {fields.name.error}
+        <label htmlFor={fields.published.id}>Published</label>
+        <Input
+          className="mt-1"
+          autoComplete="off"
+          {...conform.input(fields.published, {
+            type: 'number',
+          })}
+        />
+        {fields.published.error ? (
+          <p className="mt-0.5 text-sm text-destructive" id={fields.published.errorId}>
+            {fields.published.error}
           </p>
         ) : null}
       </div>
       <div>
-        <label htmlFor={fields.image.id}>Image</label>
-        <Input className="mt-1" autoComplete="off" {...conform.input(fields.image)} />
-        {fields.image.error ? (
-          <p className="mt-0.5 text-sm text-destructive" id={fields.image.errorId}>
-            {fields.image.error}
+        <label htmlFor={fields.target.id}>Target</label>
+        <Input
+          className="mt-1"
+          autoComplete="off"
+          {...conform.input(fields.target, {
+            type: 'number',
+          })}
+        />
+        {fields.target.error ? (
+          <p className="mt-0.5 text-sm text-destructive" id={fields.target.errorId}>
+            {fields.target.error}
           </p>
         ) : null}
       </div>

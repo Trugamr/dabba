@@ -16,6 +16,7 @@ export function convertDeploymentToComposeConfig(deployment: Deployment): Compos
       ...config.services,
       [service.name]: {
         image: service.image,
+        ports: service.ports.map(port => `${port.published}:${port.target}`),
       },
     }
   }

@@ -1,6 +1,11 @@
 import { refine } from '@conform-to/zod'
 import { z } from 'zod'
 
+export const DeploymentServicePortSchema = z.object({
+  published: z.number(),
+  target: z.number(),
+})
+
 export const DeploymentServiceSchema = z.object({
   name: z
     .string({ required_error: 'Name is required' })
@@ -8,6 +13,7 @@ export const DeploymentServiceSchema = z.object({
   image: z
     .string({ required_error: 'Image is required' })
     .min(1, { message: 'Image cannot be empty' }),
+  ports: z.array(DeploymentServicePortSchema),
 })
 
 export const DeploymentSchema = createDeploymentSchema()
@@ -43,6 +49,7 @@ export const ComposeConfigSchema = z.object({
       z.string(),
       z.object({
         image: z.string(),
+        ports: z.array(z.string()),
       }),
     )
     .refine(value => Object.keys(value).length > 0, {
