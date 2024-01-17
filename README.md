@@ -6,7 +6,7 @@ Self-hosted dashboard to manage docker compose stacks.
 
 <img src="assets/preview.png" />
 
-> [!NOTE] 
+> [!NOTE]
 > This project is still in early development, there will be bugs and missing features.
 
 ## Building and Running

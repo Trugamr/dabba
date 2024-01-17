@@ -43,8 +43,10 @@ export default function StacksRoute() {
           })}
         </ul>
       </aside>
-      <div className="container min-w-0 grow overflow-y-auto p-6">
-        <Outlet />
+      <div className="min-w-0 grow overflow-y-auto">
+        <div className="container p-6">
+          <Outlet />
+        </div>
       </div>
     </div>
   )

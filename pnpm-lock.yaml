@@ -5,6 +5,15 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@conform-to/react':
+    specifier: ^0.9.1
+    version: 0.9.1(react@18.2.0)
+  '@conform-to/zod':
+    specifier: ^0.9.1
+    version: 0.9.1(@conform-to/dom@0.9.1)(zod@3.22.4)
+  '@epic-web/client-hints':
+    specifier: ^1.2.2
+    version: 1.2.2
   '@epic-web/invariant':
     specifier: ^1.0.0
     version: 1.0.0
@@ -26,6 +35,9 @@ dependencies:
   clsx:
     specifier: ^2.1.0
     version: 2.1.0
+  date-fns:
+    specifier: ^3.2.0
+    version: 3.2.0
   execa:
     specifier: ^8.0.1
     version: 8.0.1
@@ -59,6 +71,9 @@ dependencies:
   ts-pattern:
     specifier: ^5.0.6
     version: 5.0.6
+  yaml:
+    specifier: ^2.3.4
+    version: 2.3.4
   zod:
     specifier: ^3.22.4
     version: 3.22.4
@@ -115,6 +130,9 @@ devDependencies:
   tailwindcss:
     specifier: ^3.4.1
     version: 3.4.1
+  type-fest:
+    specifier: ^4.9.0
+    version: 4.9.0
   typescript:
     specifier: ^5.1.6
     version: 5.3.3
@@ -473,9 +491,36 @@ packages:
       to-fast-properties: 2.0.0
     dev: true
 
+  /@conform-to/dom@0.9.1:
+    resolution: {integrity: sha512-+T6QgpLDPZ29j4y5nWW61WMe8qj0cQBymyzbi5sq1f3CcBO3wBbR0VPI7mbm+rLoErHWM3ghhdNlIkw0UPoLLA==}
+    dev: false
+
+  /@conform-to/react@0.9.1(react@18.2.0):
+    resolution: {integrity: sha512-SibYHk86IFh60LRPk4aJHJOgyLTgb3JYphKvG4vcemyuntdOwncd5YM/GDoccVzeCTmJi4Os/fDtOOAaDcSa9w==}
+    peerDependencies:
+      react: '>=16.8'
+    dependencies:
+      '@conform-to/dom': 0.9.1
+      react: 18.2.0
+    dev: false
+
+  /@conform-to/zod@0.9.1(@conform-to/dom@0.9.1)(zod@3.22.4):
+    resolution: {integrity: sha512-4hWBGzRpSd4RrlBFRXjS6QQ2MWFpMZDbDwz8H/xiq38Xl5yaL1RSZMhOJ4pmsmy8CIKghs78qvaD8ltTFlrNvQ==}
+    peerDependencies:
+      '@conform-to/dom': 0.9.1
+      zod: ^3.21.0
+    dependencies:
+      '@conform-to/dom': 0.9.1
+      zod: 3.22.4
+    dev: false
+
   /@emotion/hash@0.9.1:
     resolution: {integrity: sha512-gJB6HLm5rYwSLI6PQa+X1t5CFGrv1J1TWG+sOyMCeKz2ojaj6Fnl/rZEspogG+cvqbt4AE/2eIyD2QfLKTBNlQ==}
     dev: true
+
+  /@epic-web/client-hints@1.2.2:
+    resolution: {integrity: sha512-36ei/PACvvi/nh/7uKbITnZd8EP39UzYdmofrk5lqJLaPRpBt4pMeDf1bgOp0DXpuiWSVd02tcQgpu0H7blB2A==}
+    dev: false
 
   /@epic-web/invariant@1.0.0:
     resolution: {integrity: sha512-lrTPqgvfFQtR/eY/qkIzp98OGdNJu0m5ji3q/nJI8v3SXkRKEnWiOxMmbvcSoAIzv/cGiuvRy57k4suKQSAdwA==}
@@ -2486,6 +2531,10 @@ packages:
   /data-uri-to-buffer@3.0.1:
     resolution: {integrity: sha512-WboRycPNsVw3B3TL559F7kuBUM4d8CgMEvk6xEJlOp7OBPjt6G7z8WMWlD2rOFZLk6OYfFIUGsCOWzcQH9K2og==}
     engines: {node: '>= 6'}
+
+  /date-fns@3.2.0:
+    resolution: {integrity: sha512-E4KWKavANzeuusPi0jUjpuI22SURAznGkx7eZV+4i6x2A+IZxAMcajgkvuDAU1bg40+xuhW1zRdVIIM/4khuIg==}
+    dev: false
 
   /debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
@@ -6294,7 +6343,6 @@ packages:
   /type-fest@4.9.0:
     resolution: {integrity: sha512-KS/6lh/ynPGiHD/LnAobrEFq3Ad4pBzOlJ1wAnJx9N4EYoqFhMfLIBjUT2UEx4wg5ZE+cC1ob6DCSpppVo+rtg==}
     engines: {node: '>=16'}
-    dev: false
 
   /type-is@1.6.18:
     resolution: {integrity: sha512-TkRKr9sUTxEH8MdfuCSP7VizJyzRNMjj2J2do2Jr3Kym598JVdEksuzPQCnlFPW4ky9Q+iA+ma9BGm06XQBy8g==}
