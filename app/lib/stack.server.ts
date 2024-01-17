@@ -407,3 +407,21 @@ export async function getStackDetails(stack: Pick<Stack, 'directory' | 'path'>) 
 
   return merged
 }
+
+/**
+ * @returns `true` if managed stack with given name doesn't exist
+ */
+export async function isStackNameUnique(name: string) {
+  const stacksDirectory = getManagedStacksDirectory()
+  const stackDirectory = path.join(stacksDirectory, name)
+
+  try {
+    await fs.stat(stackDirectory)
+    return false
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      return true
+    }
+    throw error
+  }
+}

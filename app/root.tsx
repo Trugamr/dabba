@@ -106,7 +106,7 @@ export default function App() {
             </div>
           </nav>
         </header>
-        <div className="h-0 flex-grow">
+        <div className="h-0 grow">
           <Outlet />
         </div>
       </div>
