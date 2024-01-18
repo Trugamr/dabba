@@ -19,6 +19,7 @@ import { StackLogs } from '~/components/stack-logs'
 import { badRequest, notFound } from '~/lib/utils'
 import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
 import { ServiceStateIndicator } from '~/components/service-state-indicator'
+import { PublishedPorts } from '~/components/published-ports'
 
 const StackFormSchema = z.object({
   stack: z.string(),
@@ -182,6 +183,9 @@ export default function StacksNameRoute() {
                     <ServiceStateIndicator state={state} />
                     <span className="ml-1 capitalize">{state}</span>
                   </div>
+                  {service.ports?.length ? (
+                    <PublishedPorts className="mt-3" ports={service.ports} />
+                  ) : null}
                 </li>
               )
             })}

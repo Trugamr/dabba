@@ -272,28 +272,21 @@ export function getStackLogsProcess(stack: Pick<ManagedStack, 'directory' | 'pat
 
 export type ServiceCanonicalConfig = z.infer<typeof ServiceCanonicalConfigSchema>
 
-const ServiceCanonicalConfigSchema = z
-  .object({
-    command: z.array(z.string()).nullable(),
-    entrypoint: z.string().nullable(),
-    image: z.string(),
-    ports: z
-      .array(
-        z.object({
-          mode: z.enum(['host', 'ingress']),
-          target: z.number(),
-          published: z.string(),
-          protocol: z.enum(['tcp', 'udp']),
-        }),
-      )
-      .optional(),
-  })
-  .transform(values => {
-    return {
-      ...values,
-      state: 'inactive',
-    } as const
-  })
+const ServiceCanonicalConfigSchema = z.object({
+  command: z.array(z.string()).nullable(),
+  entrypoint: z.string().nullable(),
+  image: z.string(),
+  ports: z
+    .array(
+      z.object({
+        mode: z.enum(['host', 'ingress']),
+        target: z.number(),
+        published: z.string(),
+        protocol: z.enum(['tcp', 'udp']),
+      }),
+    )
+    .optional(),
+})
 
 const StackCanonicalConfigSchema = z.object({
   name: z.string(),
@@ -343,6 +336,8 @@ const StackServiceDetailsSchema = z
   })
 
 const StackServicesDetailsSchema = z.array(StackServiceDetailsSchema)
+
+export type StackDetails = Awaited<ReturnType<typeof getStackDetails>>
 
 /**
  * Get extended stack details

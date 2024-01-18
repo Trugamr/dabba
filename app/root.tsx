@@ -16,10 +16,15 @@ import { GlobalNavigationProgress } from './components/global-navigation-progres
 import { useTheme } from './lib/hooks/use-theme'
 import { ThemeSwitcher } from './components/theme-switcher'
 import { getTheme } from './lib/theme.server'
+import { ClientHintCheck, getHints } from './components/client-hits-check'
+import {
+  getHostFromRequest,
+  getHostnameFromRequest,
+  getProtocolFromRequest,
+} from './lib/utils.server'
 
 import 'nprogress/nprogress.css'
 import '~/globals.css'
-import { ClientHintCheck, getHints } from './components/client-hits-check'
 
 export const meta: MetaFunction = () => {
   return [{ title: 'dabba' }]
@@ -28,6 +33,11 @@ export const meta: MetaFunction = () => {
 export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     info: {
+      request: {
+        protocol: getProtocolFromRequest(request),
+        host: getHostFromRequest(request),
+        hostname: getHostnameFromRequest(request),
+      },
       hints: getHints(request),
       preferences: {
         theme: await getTheme(request),
