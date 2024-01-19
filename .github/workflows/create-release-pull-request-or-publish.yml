@@ -1,0 +1,49 @@
+name: Create Release Pull Request or Publish
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+# Reset permissions for the workflow
+permissions: {}
+
+jobs:
+  create-release-pull-request-or-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: write # Create release (changesets/action)
+      issues: write # Post issue comments (changesets/action)
+      pull-requests: write # Create pull requests (changesets/action)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.11.0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install changesets CLI
+        run: pnpm install -D @changesets/cli
+
+      - name: Create Release Pull Request or Publish
+        uses: changesets/action@v1
+        # GITHUB_TOKEN doesn't trigger workflow on automated release
+        # https://github.com/orgs/community/discussions/26875
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        with:
+          publish: pnpm changeset publish
+          title: Create new release
+          commit: 'chore: version release'

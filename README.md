@@ -2,6 +2,8 @@
 
 Self-hosted dashboard to manage docker compose stacks.
 
+[![Docker Image Version](https://ghcr-badge.egpl.dev/trugamr/dabba/latest_tag?trim=major&label=latest)](https://github.com/trugamr/dabba/pkgs/container/dabba)
+[![Docker Image](https://ghcr-badge.egpl.dev/trugamr/dabba/size)](https://github.com/trugamr/dabba/pkgs/container/dabba)
 [![GitHub issues](https://img.shields.io/github/issues/trugamr/dabba)](https://github.com/trugamr/dabba/issues)
 
 <img src="assets/preview.png" />
